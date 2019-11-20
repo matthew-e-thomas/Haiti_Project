@@ -5,15 +5,17 @@ library(caret)
 library(dplyr)
 set.seed(1001)
 
+Haiti$tarp <- ifelse(Haiti$Class == "Blue Tarp", "Yes", "No")
 
-tarp_y <- Haiti$Class
-tarp_x <- Haiti[, -1]
+tarp_y <- Haiti$tarp
+tarp_x <- Haiti[, 2:4]
+tarp_y <- as.factor(tarp_y)
 
 myFolds <- createFolds(tarp_y, k = 10)
 
 # Create reusable trainControl object: myControl
 myControl <- trainControl(
-  summaryFunction = multiClassSummary,
+  summaryFunction = twoClassSummary,
   classProbs = TRUE,
   verboseIter = TRUE,
   savePredictions = TRUE,
