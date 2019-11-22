@@ -103,11 +103,33 @@ model_qda <- train(
 confusionMatrix(model_qda, "none")
 #Sensitivity-.79335  False Alarm Rate:.026629
 
+
 #KNN Model
+
+#two class model
 model_knn <- train(
   x = tarp_x,
   y = tarp_y, 
   method = "knn", 
+  metric = "Sens",
   trControl = myControl, 
   tuneLength = 20
   )
+model_knn
+confusionMatrix(model_knn, "none")
+#detection rate: .9362, False Alarm Rate: .001855
+
+#knn using multiple classes
+model_knn_multi <- train(
+  x = tarp_x,
+  y = tarp_y_multi, 
+  method = "knn", 
+  metric = "Mean_Sensitivity",
+  trControl = myControl_multi, 
+  preProcess = c("center", "scale"),
+  tuneLength = 20
+)
+model_knn_multi
+confusionMatrix(model_knn_multi, "none")
+#detection rate:  .9446, False Alarm Rate:  .022
+#Multi-class knn works slightly better with centering & scaling
