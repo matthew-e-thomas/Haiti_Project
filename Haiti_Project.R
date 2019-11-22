@@ -10,6 +10,7 @@ Test_Data <- rbind(Tarp_67, Tarp_67Not)
 library(glmnet)
 library(MASS)
 library(caret)
+library(kernlab)
 library(dplyr)
 set.seed(1001)
 
@@ -133,3 +134,20 @@ model_knn_multi
 confusionMatrix(model_knn_multi, "none")
 #detection rate:  .9446, False Alarm Rate:  .022
 #Multi-class knn works slightly better with centering & scaling
+
+
+#Support Vector Machines
+
+#Linear kernal, two class
+svmGrid <- expand.grid(C= 2^c(0:5))
+model_svm1 <- train(
+  x = tarp_x,
+  y = tarp_y, 
+  method = "svmLinear", 
+  metric = "Sens"
+  trControl = myControl, 
+  preProcess = c("center", "scale"),
+  tuneGrid = svmGrid
+)
+model_svm1
+confusionMatrix(model_svm1, "none")
