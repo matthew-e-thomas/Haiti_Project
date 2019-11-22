@@ -18,14 +18,15 @@ Haiti$tarp <- ifelse(Haiti$Class == "Blue Tarp", "Yes", "No")
 #Fits for two class models
 tarp_y <- Haiti$tarp
 tarp_x <- Haiti[, 2:4]
-tarp_y <- as.factor(tarp_y)
+tarp_y <- factor(tarp_y, levels = c("Yes", "No"))
 
 #fits for multi class models
 tarp_y_multi <- Haiti$Class
-tarp_x <- Haiti[, 2:4]
 tarp_y_multi <- as.factor(tarp_y_multi)
 
-myFolds <- createFolds(tarp_y_multi, k = 10)
+#create folds so that we can compare models on same CV set
+myFolds <- createFolds(tarp_y, k = 10)
+myFolds_multi <- createFolds(tarp_y_multi, k = 10)
 
 # Create reusable trainControl object to compare models
 myControl <- trainControl(
@@ -44,20 +45,33 @@ myControl_multi <- trainControl(
   classProbs = TRUE,
   verboseIter = TRUE,
   savePredictions = TRUE,
-  index = myFolds
+  index = myFolds_multi
 )
 
 levels(tarp_y_multi) <- c("Blue.Tarp", "Rooftop", "Soil", "Various.Non.Tarp",
                     "Vegetation")
 
+#run logistic model with two class response
 model_logistic <- train(
   x = tarp_x, 
-  y = tarp_y_multi,
-  metric = "Specificity",
+  y = tarp_y,
+  metric = "Sens",
   method = "glmnet",
   trControl = myControl
 )
 confusionMatrix(model_logistic, "none")
+
+#logistic model with multi classes
+model_logistic_multi <- train(
+  x = tarp_x, 
+  y = tarp_y_multi,
+  metric = "Mean_Sensitivity",
+  method = "glmnet",
+  trControl = myControl_multi
+)
+
+confusionMatrix(model_logistic_multi, "none")
+#two class model does better here
 
 #LDA Model
 model_lda <- train(
@@ -66,15 +80,28 @@ model_lda <- train(
   method="lda", 
   trControl = myControl
 )
+confusionMatrix(model_lda, "none")
 
+#LDA Multiclass
+model_lda_multi <- train(
+  x = tarp_x,
+  y = tarp_y_multi,
+  method="lda", 
+  trControl = myControl_multi
+)
+confusionMatrix(model_lda_multi, "none")
+
+#multi model performs better for LDA, we'll assume for QDA as well
 
 #QDA Model
 model_qda <- train(
   x = tarp_x,
-  y = tarp_y,
+  y = tarp_y_multi,
   method="qda", 
-  trControl = myControl
+  trControl = myControl_multi
 )
+confusionMatrix(model_qda, "none")
+#Sensitivity-.79335  False Alarm Rate:.026629
 
 #KNN Model
 model_knn <- train(
