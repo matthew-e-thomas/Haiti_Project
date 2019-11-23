@@ -144,10 +144,53 @@ model_svm1 <- train(
   x = tarp_x,
   y = tarp_y, 
   method = "svmLinear", 
-  metric = "Sens"
+  metric = "Sens",
   trControl = myControl, 
   preProcess = c("center", "scale"),
   tuneGrid = svmGrid
 )
 model_svm1
 confusionMatrix(model_svm1, "none")
+#Sensitivity = .8766348, False Alarm = .000904
+
+svmGrid_poly <- expand.grid(C = 2^c(0:5), degree=c(2, 3, 4), scale=T)
+#Polynomial kernel, two class
+model_svm1_poly <- train(
+  x = tarp_x,
+  y = tarp_y, 
+  method = "svmPoly", 
+  metric = "Sens",
+  trControl = myControl, 
+  preProcess = c("center", "scale"),
+  tuneGrid = svmGrid_poly
+)
+model_svm1_poly
+confusionMatrix(model_svm1_poly, "none")
+#Detection Rate=0.9082862, False Alarm Rate=.001321
+
+#Polynomial kernel, multi-class
+model_svm1_poly_multi <- train(
+  x = tarp_x,
+  y = tarp_y_multi, 
+  method = "svmPoly", 
+  metric = "Mean_Sensitivity",
+  trControl = myControl_multi, 
+  preProcess = c("center", "scale"),
+  tuneGrid = svmGrid_poly
+)
+model_svm1_poly_multi #degree 4, C=2
+confusionMatrix(model_svm1_poly_multi,"none")
+#Detection Rate = .930432, False Alarm Rate = 0.001236
+
+#Radial kernel, multi-class
+svmGrid_radial <- expand.grid(C = 2^c(0:5), sigma= 2^c(-25, -20, -15,-10, -5, 0))
+model_svm1_radial_multi <- train(
+  x = tarp_x,
+  y = tarp_y_multi, 
+  method = "svmRadial", 
+  metric = "Mean_Sensitivity",
+  trControl = myControl_multi, 
+  preProcess = c("center", "scale"),
+  tuneGrid = svmGrid_radial
+)
+
