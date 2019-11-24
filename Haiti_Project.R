@@ -2,22 +2,22 @@ Haiti <- read.csv("HaitiPixels.csv", header=TRUE)
 
 #Hold Out Data Import and Clean Up
 Tarp_67 <- read.csv("Hold+Out+Data/067Blue_Tarps.csv", header=T)
-Tarp_67$tarp <- "Yes" #need to add column for whether it's a blue tarp or not
+Tarp_67$tarp <- "Blue.Tarp" #need to add column for whether it's a blue tarp or not
 Tarp_67Not <- read.csv("Hold+Out+Data/067Not_Blue_Tarps.csv", header=T)
 Tarp_67Not$tarp <- "No"
 Tarp_057Not <- read.csv("Hold+Out+Data/057Not_Blue_Tarps.csv")
 Tarp_057Not$tarp <- "No"
 Tarp_069 <- read.csv("Hold+Out+Data/069Blue_Tarps.csv")
-Tarp_069$tarp <- "Yes"
+Tarp_069$tarp <- "Blue.Tarp"
 Tarp_069Not <- read.csv("Hold+Out+Data/069Not_Blue_Tarps.csv")
 Tarp_069Not$tarp <- "No"
 Tarp_078 <- read.csv("Hold+Out+Data/078Blue_Tarps.csv")
-Tarp_078$tarp <- "Yes"
+Tarp_078$tarp <- "Blue.Tarp"
 Tarp_078Not <- read.csv("Hold+Out+Data/078Not_Blue_Tarps.csv")
 Tarp_078Not$tarp <- "No"
 Test_Data <- rbind(Tarp_67, Tarp_67Not, Tarp_057Not, Tarp_069,
                    Tarp_069Not, Tarp_078, Tarp_078Not)
-Test_Data$tarp <- factor(Test_Data$tarp, levels = c("Yes", "No"))
+Test_Data$tarp <- factor(Test_Data$tarp, levels = c("Blue.Tarp", "No"))
 
 library(glmnet)
 library(MASS)
@@ -28,12 +28,12 @@ library(ranger)
 library(caTools)
 set.seed(1001)
 
-Haiti$tarp <- ifelse(Haiti$Class == "Blue Tarp", "Yes", "No")
+Haiti$tarp <- ifelse(Haiti$Class == "Blue Tarp", "Blue.Tarp", "No")
 
 #Fits for two class models
 tarp_y <- Haiti$tarp
 tarp_x <- Haiti[, 2:4]
-tarp_y <- factor(tarp_y, levels = c("Yes", "No"))
+tarp_y <- factor(tarp_y, levels = c("Blue.Tarp", "No"))
 
 #fits for multi class models
 tarp_y_multi <- Haiti$Class
@@ -92,10 +92,10 @@ confusionMatrix(model_logistic_multi, "none")
 
 #run on test data
 prob_logit <- predict(model_logistic, Test_Data[,1:3], type="prob")
-Yes_or_No <- ifelse(prob_logit[1] > 0.6, "Yes", "No")
+Yes_or_No <- ifelse(prob_logit[1] > 0.6, "Blue.Tarp", "No")
 tarp_class <- factor(Yes_or_No, levels=levels(Test_Data[["tarp"]]))
 confusionMatrix(tarp_class, Test_Data$tarp)
-colAUC(prob_logit, Test_Data[["tarp"]], plotROC=T)
+colAUC(prob_logit[1], Test_Data[["tarp"]], plotROC=T)
 
 prob_logit_multi <- predict(model_logistic_multi, Test_Data[, 1:3])
 table(prob_logit_multi, Test_Data$tarp)
@@ -115,6 +115,7 @@ confusionMatrix(model_lda, "none")
 probs_lda <- predict(model_lda, Test_Data)
 confusionMatrix(probs_lda, Test_Data$tarp)
 
+
 #LDA Multiclass
 model_lda_multi <- train(
   x = tarp_x,
@@ -128,8 +129,9 @@ confusionMatrix(model_lda_multi, "none")
 #multi model performs better for LDA, we'll assume for QDA as well
 
 #test on hold-out data
-lda_probs <- predict(model_lda_multi, Test_Data[, 1:3])
+lda_probs <- predict(model_lda_multi, Test_Data[, 1:3], type="prob")
 table(lda_probs, Test_Data$tarp)
+colAUC(lda_probs[1], Test_Data[["tarp"]], plotROC=T)
 
 #QDA Model
 model_qda <- train(
@@ -143,8 +145,9 @@ confusionMatrix(model_qda, "none")
 #Sensitivity-.865205  False Alarm Rate:.026629
 
 #on hold-out data
-qda_probs <- predict(model_qda, Test_Data[, 1:3])
+qda_probs <- predict(model_qda, Test_Data[, 1:3], type="prob")
 table(qda_probs, Test_Data$tarp)
+colAUC(qda_probs[1], Test_Data[["tarp"]], plotROC=T)
 
 #KNN Model
 
@@ -182,8 +185,9 @@ confusionMatrix(model_knn_multi, "none")
 plot(model_knn, title="KNN Training Data")
 
 #on hold-out data
-knn_probs <- predict(model_knn_multi, Test_Data[, 1:3])
+knn_probs <- predict(model_knn_multi, Test_Data[, 1:3], type="prob")
 table(knn_probs, Test_Data$tarp)
+colAUC(knn_probs[1], Test_Data[["tarp"]], plotROC=T)
 
 #Support Vector Machines
 
@@ -204,8 +208,9 @@ confusionMatrix(model_svm1, "none")
 plot(model_svm1)
 
 #test on hold out
-svm_probs_linear <- predict(model_svm1, Test_Data[, 1:3])
+svm_probs_linear <- predict(model_svm1, Test_Data[, 1:3], type="prob")
 confusionMatrix(svm_probs_linear, Test_Data$tarp)
+colAUC(svm_probs_linear[1], Test_Data[["tarp"]], plotROC=T)
 
 svmGrid_poly <- expand.grid(C = 2^c(0:5), degree=c(2, 3, 4), scale=T)
 #Polynomial kernel, two class
@@ -286,7 +291,7 @@ model_randomforest_multi
 plot(model_randomforest_multi)
 confusionMatrix(model_randomforest_multi, "none")
 #detection rate=.950874, False Alarm Rate = .002325
-probs_rf <- predict(model_randomforest_multi, Test_Data[, 1:3])
+probs_rf <- predict(model_randomforest_multi, Test_Data[, 1:3], type="prob")
 table(probs_rf, Test_Data$tarp)
 #detection rate=.803798  False Alarm Rate=.007292
-
+colAUC(probs_rf[1], Test_Data[["tarp"]], plotROC=T)
